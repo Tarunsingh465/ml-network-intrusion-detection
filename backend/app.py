@@ -5,10 +5,8 @@ import pandas as pd
 import os
 from datetime import datetime
 
-
-# ==============================
 # BASIC SETUP
-# ==============================
+
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -17,17 +15,14 @@ FEATURE_PATH = os.path.join(BASE_DIR, "..", "model", "feature_columns.pkl")
 LOG_PATH = os.path.join(BASE_DIR, "..", "logs", "history_logs.csv")
 
 
-# ==============================
 # LOAD MODEL & FEATURES
-# ==============================
 model = joblib.load(MODEL_PATH)
 
 # feature list used during training
 FEATURE_COLUMNS = joblib.load(FEATURE_PATH)
 
-# ==============================
+
 # ROUTES
-# ==============================
 @app.route("/")
 def home():
     return "Flask backend is running"
@@ -36,9 +31,8 @@ def home():
 def ping():
     return {"status": "Flask is alive"}
 
-# ------------------------------
+
 # SINGLE FLOW PREDICTION
-# ------------------------------
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
@@ -59,9 +53,8 @@ def predict():
     })
 
 
-# ------------------------------
+
 # SAVE HISTORY
-# ------------------------------
 def save_history(csv_name, threshold, total, benign, attack):
     row = {
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -79,9 +72,8 @@ def save_history(csv_name, threshold, total, benign, attack):
     else:
         df_row.to_csv(LOG_PATH, index=False)
 
-# ------------------------------
+
 # BATCH CSV PREDICTION
-# ------------------------------
 @app.route("/predict_batch", methods=["POST"])
 def predict_batch():
     try:
@@ -109,7 +101,7 @@ def predict_batch():
         normal_count = int((preds == 0).sum())
         attack_count = int((preds == 1).sum())
 
-        # ✅ THIS WAS MISSING (HISTORY SAVE)
+        # ✅(HISTORY SAVE)
         save_history(
             csv_name=file.filename,
             threshold=threshold,
@@ -129,8 +121,8 @@ def predict_batch():
         return jsonify({"error": "failed"}), 500
 
 
-# ==============================
+
 # RUN SERVER
-# ==============================
+
 if __name__ == "__main__":
     app.run(debug=True)

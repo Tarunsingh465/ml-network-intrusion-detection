@@ -1,22 +1,17 @@
 import streamlit as st
 import requests
 
-# =========================
+
 # PAGE CONFIG
-# =========================
 st.set_page_config(
     page_title="ML-Based Network Intrusion Detection System",
     layout="wide"
 )
 
-# =========================
 # TITLE
-# =========================
 st.title("🔐 ML-Based Network Intrusion Detection System")
 
-# =========================
 # SYSTEM OVERVIEW
-# =========================
 st.markdown("""
 ### 🧾 System Overview
 
@@ -35,9 +30,7 @@ st.caption("Dataset: CICIDS 2017 | Model: Random Forest | Author: Tarun Singh")
 
 st.markdown("---")
 
-# =========================
 # NAVIGATION MODULES
-# =========================
 st.subheader("📂 Dashboard Modules")
 
 col1, col2 = st.columns(2)
@@ -64,9 +57,7 @@ with col4:
 
 st.markdown("---")
 
-# =========================
 # SYSTEM TEST BUTTONS
-# =========================
 st.subheader("🧪 System Tests")
 
 test_col1, test_col2 = st.columns(2)

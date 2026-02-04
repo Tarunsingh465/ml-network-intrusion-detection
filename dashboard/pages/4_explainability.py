@@ -4,9 +4,8 @@ import plotly.express as px
 import joblib
 import os
 
-# =========================
+
 # PAGE CONFIG
-# =========================
 st.set_page_config(
     page_title="Model Explainability",
     layout="wide"
@@ -17,32 +16,29 @@ st.caption(
     "Global model explainability with dataset-aware context from prediction history."
 )
 
-# =========================
+
 # PATH SETUP
-# =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
 
 MODEL_PATH = os.path.join(PROJECT_ROOT, "model", "random_forest_model.pkl")
 HISTORY_PATH = os.path.join(PROJECT_ROOT, "logs", "history_logs.csv")
 
-# =========================
+
 # LOAD MODEL
-# =========================
+
 model = joblib.load(MODEL_PATH)
 
-# =========================
+
 # LOAD HISTORY
-# =========================
 if not os.path.exists(HISTORY_PATH):
     st.warning("No history data available yet.")
     st.stop()
 
 history_df = pd.read_csv(HISTORY_PATH)
 
-# =========================
+
 # SELECT RUN
-# =========================
 st.markdown("### 📂 Select Prediction Run")
 
 history_df["display"] = (
@@ -60,9 +56,8 @@ selected_run = history_df[
     history_df["display"] == selected_display
 ].iloc[0]
 
-# =========================
+
 # RUN METADATA
-# =========================
 st.info(
     f"""
 **CSV File:** {selected_run['csv_name']}  
@@ -75,15 +70,13 @@ st.info(
 """
 )
 
-# =========================
+
 # GLOBAL FEATURE IMPORTANCE
-# =========================
 importances = model.feature_importances_
 feature_names = model.feature_names_in_
 
-# =========================
+
 # DATASET-AWARE VISUAL SCALING
-# =========================
 attack_ratio = selected_run["attack_count"] / max(
     1, selected_run["total_flows"]
 )
@@ -97,9 +90,7 @@ importance_df = pd.DataFrame({
 
 
 
-# =========================
 # ATTACK vs BENIGN COMPARISON
-# =========================
 st.markdown("### ⚔️ Attack vs Benign Influence Comparison")
 st.caption(
     "Relative influence comparison derived from global model behavior "
@@ -149,9 +140,7 @@ fig_compare.update_layout(
 st.plotly_chart(fig_compare, use_container_width=True)
 
 
-# =========================
 # TOP FEATURE IMPORTANCE
-# =========================
 st.markdown("### 🔍 Top Feature Importance (Global Model View)")
 
 top_n = st.slider(
@@ -181,9 +170,7 @@ st.plotly_chart(fig_importance, use_container_width=True)
 
 
 
-# =========================
 # HUMAN-READABLE EXPLANATION
-# =========================
 st.markdown("### 📝 Human-Readable Explanation")
 
 top_features = importance_df.head(5)["Feature"].tolist()
@@ -206,9 +193,7 @@ dataset-specific context from the selected run.
 """
 )
 
-# =========================
 # FOOTER
-# =========================
 st.caption(
     "Explainability Type: Global Feature Importance (Random Forest) | Dataset-Aware Context"
 )

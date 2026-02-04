@@ -53,7 +53,7 @@ print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
 
 
-# 🔹 SAVE MODEL (THIS IS THE KEY LINE)
+# 🔹 SAVE MODEL 
 joblib.dump(rf_model, "model/random_forest_model.pkl")
 
 print("Model saved inside model folder")
