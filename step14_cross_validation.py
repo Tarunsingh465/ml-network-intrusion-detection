@@ -8,9 +8,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 
-# ---------------------------------------------------------
 # 1. Load Dataset
-# ---------------------------------------------------------
 df = pd.read_csv("cicids2017_clean.csv")
 
 df.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -24,9 +22,7 @@ df["Binary_Label"] = df["Label"].apply(
 X = df.drop(columns=["Label", "Binary_Label"])
 y = df["Binary_Label"]
 
-# ---------------------------------------------------------
 # 2. K-Fold Cross Validation
-# ---------------------------------------------------------
 print("Starting 5-Fold Cross Validation...")
 
 rf_model = RandomForestClassifier(
@@ -45,9 +41,7 @@ scores = cross_val_score(
     scoring="recall"
 )
 
-# ---------------------------------------------------------
 # 3. Results
-# ---------------------------------------------------------
 print("\nCross-validation Recall Scores:", scores)
 print("Mean Recall:", scores.mean())
 print("Standard Deviation:", scores.std())

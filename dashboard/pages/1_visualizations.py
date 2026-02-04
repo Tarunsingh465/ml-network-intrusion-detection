@@ -5,26 +5,23 @@ import requests
 import numpy as np
 import os
 
-# =========================
-# PATH SETUP (FIXED)
-# =========================
+
+# PATH SETUP
 PROJECT_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
 MODEL_DIR = os.path.join(PROJECT_ROOT, "model")
 FEATURE_PATH = os.path.join(MODEL_DIR, "feature_columns.pkl")
 
-# =========================
+
 # PAGE CONFIG
-# =========================
 st.set_page_config(
     page_title="Dashboard Overview",
     layout="wide"
 )
 
-# =========================
+
 # CUSTOM CSS
-# =========================
 st.markdown("""
 <style>
 .block-container {
@@ -40,14 +37,12 @@ div[data-testid="metric-container"] {
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
+
 # TITLE
-# =========================
 st.markdown("## 📊 Dashboard Overview")
 
-# =========================
-# KPI CARDS
-# =========================
+
+# KPI CARDS 
 k1, k2, k3, k4 = st.columns(4)
 
 st.markdown("### 📂 Upload Dataset (CSV)")
@@ -68,9 +63,8 @@ threshold = st.slider(
     help="Lower value = more sensitive (more attacks detected)"
 )
 
-# =========================
-# LOAD CSV ONCE (CRITICAL FIX)
-# =========================
+
+# LOAD CSV ONCE 
 if uploaded_file is not None:
     st.session_state.pop("batch_data", None)
 
@@ -82,9 +76,8 @@ if uploaded_file is not None:
         st.error(f"Failed to read CSV: {e}")
         st.stop()
 
-# =========================
+
 # BATCH PREDICTION
-# =========================
 if uploaded_file is not None:
     with st.spinner("Processing dataset..."):
         try:
@@ -108,9 +101,8 @@ if uploaded_file is not None:
     else:
         st.error("Error processing dataset")
 
-# =========================
+
 # MAIN ANALYTICS
-# =========================
 st.markdown("### 📊 Live Traffic Analytics (Backend Driven)")
 
 if st.button("Generate Live Analytics"):
@@ -229,9 +221,8 @@ if st.button("Generate Live Analytics"):
 
     st.plotly_chart(freq_fig, use_container_width=True)
 
-# =========================
-# SINGLE FLOW CONFIDENCE (FINAL FIXED)
-# =========================
+
+# SINGLE FLOW CONFIDENCE
 st.markdown("---")
 st.markdown("### 🔐 Model Confidence (Real Single Flow)")
 
@@ -288,9 +279,8 @@ if st.button("Run Confidence Test on Uploaded Data"):
     except Exception as e:
         st.error(f"Error while computing confidence: {e}")
 
-# =========================
+
 # FOOTER
-# =========================
 st.caption(
     "Dataset: CICIDS 2017 | Model: Random Forest | Live Backend Visualization"
 )

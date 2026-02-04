@@ -31,9 +31,8 @@ X_test  = imputer.transform(X_test)
 
 print("NaN values handled using mean imputation")
 
-# ==============================
+
 # LOGISTIC REGRESSION MODEL
-# ==============================
 
 lr = LogisticRegression(
     max_iter=1000,

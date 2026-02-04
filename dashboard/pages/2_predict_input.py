@@ -3,17 +3,14 @@ import plotly.express as px
 import requests
 import pandas as pd
 
-# =========================
+
 # PAGE CONFIG
-# =========================
 st.set_page_config(
     page_title="Single Flow Prediction",
     layout="wide"
 )
 
-# =========================
 # CUSTOM CSS
-# =========================
 st.markdown("""
 <style>
 .card {
@@ -40,18 +37,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
 # TITLE
-# =========================
 st.markdown("## 🧪 Single Flow Prediction")
 st.info(
     "This page is for **single network flow testing only**. "
     "For bulk CSV analysis, use the **Visualization page**."
 )
 
-# =========================
 # INPUT FEATURES
-# =========================
 st.markdown("### 🔧 Configure Network Flow")
 
 c1, c2 = st.columns(2)
@@ -70,9 +63,8 @@ with c2:
     active_mean = st.number_input("Active Mean", value=100.0)
     idle_mean = st.number_input("Idle Mean", value=200.0)
 
-# =========================
+
 # BUILD FEATURE VECTOR (78)
-# =========================
 features = [0] * 78
 features[1]  = flow_duration
 features[2]  = fwd_packets
@@ -83,9 +75,8 @@ features[41] = pkt_len_std
 features[74] = active_mean
 features[77] = idle_mean
 
-# =========================
+
 # PREDICT
-# =========================
 st.markdown("### 🚀 Run Prediction")
 
 if st.button("Predict Network Flow"):
@@ -106,9 +97,8 @@ if st.button("Predict Network Flow"):
         attack_prob = result["attack_confidence"]
         benign_prob = result["benign_confidence"]
 
-        # =========================
-        # RESULT SUMMARY
-        # =========================
+        
+        # RESULT SUMMARY 
         risk = (
             "LOW RISK" if attack_prob < 0.2 else
             "MEDIUM RISK" if attack_prob < 0.5 else
@@ -138,17 +128,15 @@ if st.button("Predict Network Flow"):
         st.progress(int(attack_prob * 100))
         st.caption("Attack probability (0% = Safe, 100% = Highly Malicious)")
 
-        # =========================
+        
         # VISUALIZATION DATA
-        # =========================
         df = pd.DataFrame({
             "Type": ["Benign", "Attack"],
             "Probability": [benign_prob, attack_prob]
         })
 
-        # =========================
+        
         # PIE + BAR
-        # =========================
         left, right = st.columns(2)
 
         with left:
@@ -191,9 +179,8 @@ if st.button("Predict Network Flow"):
     except Exception as e:
         st.error(f"Prediction failed: {e}")
 
-# =========================
+
 # FOOTER
-# =========================
 st.caption(
     "Model: Random Forest | Single Flow Probability-Based Intrusion Detection"
 )
