@@ -84,7 +84,8 @@ selected_index = st.selectbox(
 )
 
 if st.button("🧠 View Explainability for this Run"):
-    st.session_state["selected_run"] = df.loc[selected_index].to_dict()
+    selected_row = df.iloc[selected_index]
+    st.session_state["selected_run"] = selected_row.to_dict()
     st.switch_page("pages/4_explainability.py")
 
 

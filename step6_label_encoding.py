@@ -9,4 +9,3 @@ df['Label_encoded'] = df['Label'].apply(
 
 print(df[['Label', 'Label_encoded']].head())
 print(df['Label_encoded'].value_counts())
-
