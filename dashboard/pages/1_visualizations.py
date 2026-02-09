@@ -62,7 +62,10 @@ threshold = st.slider(
     step=0.01,
     help="Lower value = more sensitive (more attacks detected)"
 )
-
+st.caption(
+    "ℹ️ Threshold affects batch detection sensitivity only.  "
+    "Single-flow confidence always shows the model’s raw prediction."
+)
 
 # LOAD CSV ONCE 
 if uploaded_file is not None:
