@@ -1,6 +1,4 @@
-# =========================================================
-# STEP 16: Phase 4.2.4 – Noise Robustness Test
-# =========================================================
+# Noise Robustness Test
 
 import pandas as pd
 import numpy as np

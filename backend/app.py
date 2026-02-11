@@ -53,7 +53,6 @@ def predict():
     })
 
 
-
 # SAVE HISTORY
 def save_history(csv_name, threshold, total, benign, attack):
     row = {
@@ -73,7 +72,7 @@ def save_history(csv_name, threshold, total, benign, attack):
         df_row.to_csv(LOG_PATH, index=False)
 
 
-# BATCH CSV PREDICTION
+# BATCH CSV PREDICTION (THRESHOLD BASED)
 @app.route("/predict_batch", methods=["POST"])
 def predict_batch():
     try:
@@ -101,7 +100,7 @@ def predict_batch():
         normal_count = int((preds == 0).sum())
         attack_count = int((preds == 1).sum())
 
-        # ✅(HISTORY SAVE)
+        # ✅ HISTORY SAVE
         save_history(
             csv_name=file.filename,
             threshold=threshold,
@@ -120,9 +119,6 @@ def predict_batch():
         print("BACKEND ERROR:", e)
         return jsonify({"error": "failed"}), 500
 
-
-
 # RUN SERVER
-
 if __name__ == "__main__":
     app.run(debug=True)

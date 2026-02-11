@@ -13,10 +13,7 @@ y_test  = pd.read_csv("y_test.csv").values.ravel()
 
 print("Train-test data loaded")
 
-# ==============================
 # HANDLE INF AND NaN VALUES
-# ==============================
-
 # Replace inf with NaN
 X_train.replace([np.inf, -np.inf], np.nan, inplace=True)
 X_test.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -33,7 +30,6 @@ print("NaN values handled using mean imputation")
 
 
 # LOGISTIC REGRESSION MODEL
-
 lr = LogisticRegression(
     max_iter=1000,
     n_jobs=-1

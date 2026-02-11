@@ -240,7 +240,7 @@ if st.button("Run Confidence Test on Uploaded Data"):
         # Load trained feature order
         feature_columns = pd.read_pickle(FEATURE_PATH)
 
-        # === SAME PREPROCESSING AS BACKEND ===
+        # SAME PREPROCESSING AS BACKEND
         df_numeric = df_uploaded.select_dtypes(include=["number"])
         df_numeric = df_numeric.replace([np.inf, -np.inf], 0)
         df_numeric = df_numeric.fillna(0)
