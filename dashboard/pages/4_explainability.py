@@ -4,9 +4,8 @@ import plotly.express as px
 import joblib
 import os
 
-# =========================
+
 # PAGE CONFIG
-# =========================
 st.set_page_config(
     page_title="Model Explainability",
     layout="wide"
@@ -17,27 +16,23 @@ st.caption(
     "Global feature importance of the trained ML model with optional run-specific context."
 )
 
-# =========================
+
 # PATH SETUP
-# =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
 
 MODEL_PATH = os.path.join(PROJECT_ROOT, "model", "random_forest_model.pkl")
 
-# =========================
+
 # LOAD MODEL
-# =========================
 model = joblib.load(MODEL_PATH)
 
-# =========================
 # LOAD SELECTED RUN (IF ANY)
-# =========================
+
 selected_run = st.session_state.get("selected_run")
 
-# =========================
 # MODE DECISION
-# =========================
+
 if selected_run:
     # CASE 1: FROM HISTORY PAGE
     st.markdown("### 📌 Explaining Selected Prediction Run")
@@ -69,9 +64,9 @@ else:
 
     attack_ratio = 0.5  # neutral default
 
-# =========================
+
 # GLOBAL FEATURE IMPORTANCE
-# =========================
+
 importances = model.feature_importances_
 feature_names = model.feature_names_in_
 
@@ -82,9 +77,9 @@ importance_df = pd.DataFrame({
     "Importance": importances * scale_factor
 }).sort_values("Importance", ascending=False)
 
-# =========================
+
 # TOP FEATURE IMPORTANCE
-# =========================
+
 st.markdown("### 🔍 Top Feature Importance")
 
 top_n = st.slider(
@@ -112,9 +107,8 @@ fig_importance.update_layout(
 
 st.plotly_chart(fig_importance, use_container_width=True)
 
-# =========================
 # ATTACK vs BENIGN COMPARISON
-# =========================
+
 st.markdown("### ⚔️ Attack vs Benign Feature Influence")
 
 compare_k = st.slider(
@@ -159,9 +153,9 @@ fig_compare.update_layout(
 
 st.plotly_chart(fig_compare, use_container_width=True)
 
-# =========================
+
 # HUMAN-READABLE EXPLANATION
-# =========================
+
 st.markdown("### 📝 Human-Readable Explanation")
 
 top_features = importance_df.head(5)["Feature"].tolist()
@@ -183,9 +177,8 @@ st.info(
 """
 )
 
-# =========================
+
 # FOOTER
-# =========================
 st.caption(
     "Explainability Type: Global Feature Importance (Random Forest)"
 )

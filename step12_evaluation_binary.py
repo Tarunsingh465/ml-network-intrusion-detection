@@ -1,9 +1,7 @@
-# =========================================================
-# STEP 12: Phase 4.1 – Binary Evaluation (Benign vs Attack)
+
+# Binary Evaluation (Benign vs Attack)
 # Project: ML-Based Network Intrusion Detection System
 # Dataset: CICIDS 2017
-# =========================================================
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +16,6 @@ from sklearn.metrics import (
     roc_curve
 )
 
-
 # 1. Load Dataset
 print("Loading dataset...")
 df = pd.read_csv("cicids2017_clean.csv")
@@ -32,11 +29,11 @@ df.replace([np.inf, -np.inf], np.nan, inplace=True)
 df.fillna(0, inplace=True)
 print("Data cleaning completed")
 
-# ---------------------------------------------------------
+
 # 3. CORRECT BINARY LABEL MAPPING
 # BENIGN -> 0
 # ANY ATTACK -> 1
-# ---------------------------------------------------------
+
 print("\nConverting multiclass labels to binary...")
 
 df["Binary_Label"] = df["Label"].apply(

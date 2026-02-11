@@ -1,6 +1,4 @@
-# =========================================================
-# STEP 14: Phase 4.2.2 – K-Fold Cross Validation
-# =========================================================
+# K-Fold Cross Validation
 
 import pandas as pd
 import numpy as np

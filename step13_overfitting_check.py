@@ -1,4 +1,4 @@
-# STEP 13: Phase 4.2.1 – Overfitting Check
+# Overfitting Check
 
 import pandas as pd
 import numpy as np
