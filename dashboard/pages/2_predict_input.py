@@ -1,85 +1,185 @@
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import pandas as pd
+import joblib
+import os
+import numpy as np
+
+from utils.ui import apply_theme, render_sidebar
 
 
+# ==============================
 # PAGE CONFIG
+# ==============================
 st.set_page_config(
-    page_title="Single Flow Prediction",
+    page_title="Predict Network Traffic",
     layout="wide"
 )
 
-# CUSTOM CSS
-st.markdown("""
-<style>
-.card {
-    background:#0f172a;
-    padding:20px;
-    border-radius:12px;
-    border:1px solid #1e293b;
-    transition:0.3s;
-}
-.card:hover {
-    box-shadow:0 0 15px rgba(56,189,248,0.3);
-}
-.stButton>button {
-    background:#2563eb;
-    color:white;
-    font-weight:600;
-    height:3em;
-    border-radius:8px;
-}
-.stButton>button:hover {
-    background:#1e40af;
-    transform:scale(1.03);
-}
-</style>
-""", unsafe_allow_html=True)
+apply_theme()
+threshold = render_sidebar("Predict Input")
 
-# TITLE
-st.markdown("## 🧪 Single Flow Prediction")
-st.info(
-    "This page is for **single network flow testing only**. "
-    "For bulk CSV analysis, use the **Visualization page**."
+
+# ==============================
+# LOAD MODEL + FEATURES
+# ==============================
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..")
 )
 
-# INPUT FEATURES
-st.markdown("### 🔧 Configure Network Flow")
+MODEL_PATH = os.path.join(PROJECT_ROOT, "model", "random_forest_model.pkl")
+FEATURE_PATH = os.path.join(PROJECT_ROOT, "model", "feature_columns.pkl")
+DATA_PATH = os.path.join(PROJECT_ROOT, "cicids2017_clean.csv")
 
-c1, c2 = st.columns(2)
+model = joblib.load(MODEL_PATH)
+all_features = joblib.load(FEATURE_PATH)
 
-with c1:
-    st.markdown("#### 🟦 Traffic Volume Features")
-    flow_duration = st.number_input("Flow Duration", value=1000.0)
-    fwd_packets = st.number_input("Total Forward Packets", value=10.0)
-    bwd_packets = st.number_input("Total Backward Packets", value=5.0)
-    flow_bytes = st.number_input("Flow Bytes/s", value=500.0)
+importances = model.feature_importances_
 
-with c2:
-    st.markdown("#### 🟧 Packet & Activity Features")
-    pkt_len_mean = st.number_input("Packet Length Mean", value=50.0)
-    pkt_len_std = st.number_input("Packet Length Std", value=10.0)
-    active_mean = st.number_input("Active Mean", value=100.0)
-    idle_mean = st.number_input("Idle Mean", value=200.0)
+importance_df = pd.DataFrame({
+    "Feature": all_features,
+    "Importance": importances
+}).sort_values(by="Importance", ascending=False)
+
+top15_dynamic = importance_df.head(15)["Feature"].tolist()
 
 
-# BUILD FEATURE VECTOR (78)
-features = [0] * 78
-features[1]  = flow_duration
-features[2]  = fwd_packets
-features[3]  = bwd_packets
-features[14] = flow_bytes
-features[40] = pkt_len_mean
-features[41] = pkt_len_std
-features[74] = active_mean
-features[77] = idle_mean
+# ==============================
+# LOAD STRONGEST ATTACK SAMPLE
+# ==============================
+df_data = pd.read_csv(DATA_PATH)
+
+attack_rows = df_data[df_data["Label_encoded"] == 1]
+
+attack_features = attack_rows.drop(
+    columns=["Label", "Label_encoded"],
+    errors="ignore"
+)
+
+attack_features = attack_features.replace(
+    [np.inf, -np.inf], 0
+)
+attack_features = attack_features.fillna(0)
+
+# Predict probability for all attack samples
+attack_probs = model.predict_proba(attack_features)[:, 1]
+
+# Select most confident attack sample
+strongest_index = attack_probs.argmax()
+
+attack_sample = attack_features.iloc[strongest_index]
 
 
-# PREDICT
+# ==============================
+# FEATURE DESCRIPTIONS
+# ==============================
+feature_descriptions = {
+    "Flow Duration": "Total duration of the network flow.",
+    "Total Fwd Packets": "Packets sent forward.",
+    "Total Backward Packets": "Packets sent backward.",
+    "Flow Bytes/s": "Bytes transferred per second.",
+    "Flow Packets/s": "Packets transferred per second."
+}
+
+
+st.title("🧪 Intelligent Configurable Flow Prediction")
+
+
+# ==============================
+# RESET BUTTON
+# ==============================
+if "selected_features" not in st.session_state:
+    st.session_state.selected_features = top15_dynamic.copy()
+
+if st.button("🔄 Reset To Top 15 Features"):
+    st.session_state.selected_features = top15_dynamic.copy()
+
+
+# ==============================
+# FEATURE SELECTION
+# ==============================
+st.markdown("### 🎛 Select 15 Features")
+
+selected_features = []
+
+for i in range(15):
+
+    remaining_options = [
+        f for f in all_features
+        if f not in selected_features
+    ]
+
+    default_value = st.session_state.selected_features[i]
+
+    feature = st.selectbox(
+        f"Feature {i+1}",
+        options=remaining_options,
+        index=remaining_options.index(default_value)
+        if default_value in remaining_options else 0,
+        key=f"feature_select_{i}"
+    )
+
+    importance_score = importance_df[
+        importance_df["Feature"] == feature
+    ]["Importance"].values[0]
+
+    description = feature_descriptions.get(
+        feature,
+        "No description available."
+    )
+
+    st.caption(
+        f"Importance: {importance_score:.4f} | ℹ {description}"
+    )
+
+    selected_features.append(feature)
+
+st.session_state.selected_features = selected_features
+
+
+# ==============================
+# INPUT VALUES (Strong Attack Defaults)
+# ==============================
+st.markdown("---")
+st.markdown("### ✏ Enter Feature Values (Strongest Attack Sample Loaded)")
+
+feature_values = {}
+cols = st.columns(3)
+
+for idx, feature in enumerate(selected_features):
+
+    default_val = float(attack_sample.get(feature, 0.0))
+
+    with cols[idx % 3]:
+        value = st.number_input(
+            feature,
+            value=default_val,
+            step=1.0,
+            key=f"value_{feature}"
+        )
+
+        feature_values[feature] = value
+
+
+# ==============================
+# BUILD FULL VECTOR
+# ==============================
+features = [0] * len(all_features)
+
+for i, fname in enumerate(all_features):
+    if fname in feature_values:
+        features[i] = feature_values[fname]
+
+
+# ==============================
+# PREDICTION
+# ==============================
 st.markdown("### 🚀 Run Prediction")
 
-if st.button("Predict Network Flow"):
+if st.button("Predict Network Flow", use_container_width=True):
+
     try:
         res = requests.post(
             "http://127.0.0.1:5000/predict",
@@ -87,100 +187,79 @@ if st.button("Predict Network Flow"):
             timeout=5
         )
 
-        if res.status_code != 200:
-            st.error("Backend error during prediction")
-            st.stop()
-
         result = res.json()
 
         label = result["label"]
         attack_prob = result["attack_confidence"]
         benign_prob = result["benign_confidence"]
 
-        
-        # RESULT SUMMARY 
-        risk = (
-            "LOW RISK" if attack_prob < 0.2 else
-            "MEDIUM RISK" if attack_prob < 0.5 else
-            "HIGH RISK"
-        )
-
-        color = "#16a34a" if label == "BENIGN" else "#dc2626"
+        # Risk classification
+        if attack_prob < 0.2:
+            risk = "LOW RISK"
+            risk_color = "green"
+        elif attack_prob < 0.5:
+            risk = "MEDIUM RISK"
+            risk_color = "orange"
+        else:
+            risk = "HIGH RISK"
+            risk_color = "red"
 
         st.markdown(
-            f"""
-            <div style="
-                background:#020617;
-                border-left:6px solid {color};
-                padding:20px;
-                border-radius:10px;
-                color:white;
-            ">
-                <h2>Prediction: {label}</h2>
-                <p><b>Attack Probability:</b> {attack_prob:.2f}</p>
-                <p><b>Benign Probability:</b> {benign_prob:.2f}</p>
-                <p><b>Risk Level:</b> {risk}</p>
-            </div>
-            """,
-            unsafe_allow_html=True
+            f"## 🔐 Prediction: {label} | Risk Level: :{risk_color}[{risk}]"
         )
 
-        st.progress(int(attack_prob * 100))
-        st.caption("Attack probability (0% = Safe, 100% = Highly Malicious)")
+        # ==============================
+        # ATTACK SEVERITY METER
+        # ==============================
+        st.markdown("## 🚨 Attack Severity Meter")
 
-        
-        # VISUALIZATION DATA
+        gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=attack_prob * 100,
+            title={"text": "Attack Probability (%)"},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "red"},
+                "steps": [
+                    {"range": [0, 25], "color": "green"},
+                    {"range": [25, 50], "color": "orange"},
+                    {"range": [50, 100], "color": "red"},
+                ],
+            }
+        ))
+
+        st.plotly_chart(gauge, use_container_width=True)
+
+        # ==============================
+        # PROBABILITY DISTRIBUTION
+        # ==============================
+        st.markdown("## 📊 Probability Distribution")
+
         df = pd.DataFrame({
             "Type": ["Benign", "Attack"],
             "Probability": [benign_prob, attack_prob]
         })
 
-        
-        # PIE + BAR
-        left, right = st.columns(2)
+        pie = px.pie(
+            df,
+            names="Type",
+            values="Probability",
+            color="Type",
+            color_discrete_map={
+                "Benign": "#22c55e",
+                "Attack": "#ef4444"
+            },
+            hole=0.4
+        )
 
-        with left:
-            pie = px.pie(
-                df,
-                names="Type",
-                values="Probability",
-                color="Type",
-                color_discrete_map={
-                    "Benign": "green",
-                    "Attack": "red"
-                },
-                hole=0.4
-            )
-            pie.update_traces(
-                hovertemplate="<b>%{label}</b><br>Probability: %{value:.2f}"
-            )
-            pie.update_layout(title="Traffic Probability Distribution")
-            st.plotly_chart(pie, use_container_width=True)
+        pie.update_layout(showlegend=False)
 
-        with right:
-            bar = px.bar(
-                df,
-                x="Type",
-                y="Probability",
-                color="Type",
-                color_discrete_map={
-                    "Benign": "green",
-                    "Attack": "red"
-                },
-                text_auto=True
-            )
-            bar.update_layout(
-                title="Attack vs Benign Probability",
-                yaxis_title="Probability",
-                xaxis_title=""
-            )
-            st.plotly_chart(bar, use_container_width=True)
+        st.plotly_chart(pie, use_container_width=True)
 
     except Exception as e:
         st.error(f"Prediction failed: {e}")
 
 
-# FOOTER
 st.caption(
-    "Model: Random Forest | Single Flow Probability-Based Intrusion Detection"
+    "Dynamic Feature Selection | Strongest Attack Auto-Loaded | Random Forest IDS"
 )

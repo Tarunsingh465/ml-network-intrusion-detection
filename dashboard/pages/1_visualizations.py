@@ -4,9 +4,26 @@ import plotly.express as px
 import requests
 import numpy as np
 import os
+import joblib
+
+from utils.ui import apply_theme, render_sidebar
 
 
+# ==============================
+# PAGE CONFIG (MUST BE FIRST)
+# ==============================
+st.set_page_config(
+    page_title="Traffic Visualizations",
+    layout="wide"
+)
+
+apply_theme()
+threshold = render_sidebar("Visualizations")
+
+
+# ==============================
 # PATH SETUP
+# ==============================
 PROJECT_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
@@ -14,35 +31,15 @@ MODEL_DIR = os.path.join(PROJECT_ROOT, "model")
 FEATURE_PATH = os.path.join(MODEL_DIR, "feature_columns.pkl")
 
 
-# PAGE CONFIG
-st.set_page_config(
-    page_title="Dashboard Overview",
-    layout="wide"
-)
+# ==============================
+# PAGE TITLE
+# ==============================
+st.title("📊 Dashboard Overview")
 
 
-# CUSTOM CSS
-st.markdown("""
-<style>
-.block-container {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-}
-div[data-testid="metric-container"] {
-    background-color: #f8f9fb;
-    border: 1px solid #e0e0e0;
-    padding: 10px;
-    border-radius: 8px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-# TITLE
-st.markdown("## 📊 Dashboard Overview")
-
-
-# KPI CARDS 
+# ==============================
+# KPI SECTION
+# ==============================
 k1, k2, k3, k4 = st.columns(4)
 
 st.markdown("### 📂 Upload Dataset (CSV)")
@@ -52,22 +49,14 @@ uploaded_file = st.file_uploader(
     type=["csv"]
 )
 
-st.markdown("### 🎚️ Detection Sensitivity")
-
-threshold = st.slider(
-    "Attack Probability Threshold",
-    min_value=0.01,
-    max_value=0.3,
-    value=0.1,
-    step=0.01,
-    help="Lower value = more sensitive (more attacks detected)"
-)
 st.caption(
-    "ℹ️ Threshold affects batch detection sensitivity only.  "
-    "Single-flow confidence always shows the model’s raw prediction."
+    "ℹ️ Detection sensitivity controlled from Sidebar → Page Settings."
 )
 
-# LOAD CSV ONCE 
+
+# ==============================
+# LOAD CSV
+# ==============================
 if uploaded_file is not None:
     st.session_state.pop("batch_data", None)
 
@@ -80,7 +69,9 @@ if uploaded_file is not None:
         st.stop()
 
 
+# ==============================
 # BATCH PREDICTION
+# ==============================
 if uploaded_file is not None:
     with st.spinner("Processing dataset..."):
         try:
@@ -105,8 +96,10 @@ if uploaded_file is not None:
         st.error("Error processing dataset")
 
 
-# MAIN ANALYTICS
-st.markdown("### 📊 Live Traffic Analytics (Backend Driven)")
+
+# TRAFFIC VISUALIZATION SECTION
+
+st.markdown("### 📊 Live Traffic Analytics")
 
 if st.button("Generate Live Analytics"):
 
@@ -125,6 +118,9 @@ if st.button("Generate Live Analytics"):
 
     left, right = st.columns(2)
 
+    # ==============================
+    # PIE CHART (Green & Red)
+    # ==============================
     with left:
         st.markdown("#### Traffic Distribution")
 
@@ -134,25 +130,28 @@ if st.button("Generate Live Analytics"):
             values="Count",
             color="Traffic",
             color_discrete_map={
-                "Benign": "#2563eb",
-                "Attack": "#f59e0b"
+                "Benign": "#22c55e",   # Green
+                "Attack": "#ef4444"    # Red
             },
             hole=0.4
         )
 
         pie_fig.update_traces(
             textinfo="label+percent",
-            hovertemplate="<b>%{label}</b><br>%{value} predictions"
+            hovertemplate="<b>%{label}</b><br>Count: %{value}"
         )
 
         pie_fig.update_layout(
             showlegend=False,
-            height=280,
+            height=300,
             margin=dict(l=0, r=0, t=10, b=0)
         )
 
         st.plotly_chart(pie_fig, use_container_width=True)
 
+    # ==============================
+    # BAR CHART (Green & Red)
+    # ==============================
     with right:
         st.markdown("#### Attack vs Benign Count")
 
@@ -162,19 +161,20 @@ if st.button("Generate Live Analytics"):
             y="Count",
             color="Traffic",
             color_discrete_map={
-                "Benign": "#2563eb",
-                "Attack": "#f59e0b"
+                "Benign": "#22c55e",   # Green
+                "Attack": "#ef4444"    # Red
             },
             text="Count"
         )
 
         bar_fig.update_traces(
-            hovertemplate="<b>%{x}</b><br>Count: %{y}"
+            hovertemplate="<b>%{x}</b><br>Count: %{y}",
+            textposition="outside"
         )
 
         bar_fig.update_layout(
             showlegend=False,
-            height=280,
+            height=300,
             margin=dict(l=0, r=0, t=10, b=0),
             yaxis_title="Number of Predictions",
             xaxis_title=""
@@ -182,7 +182,8 @@ if st.button("Generate Live Analytics"):
 
         st.plotly_chart(bar_fig, use_container_width=True)
 
-    st.markdown("#### Feature Impact Frequency (Model Insight)")
+    # FEATURE IMPACT MOCK
+    st.markdown("#### Feature Impact Frequency")
 
     feature_df = pd.DataFrame({
         "Feature": [
@@ -210,26 +211,17 @@ if st.button("Generate Live Analytics"):
         markers=True
     )
 
-    freq_fig.update_traces(
-        hovertemplate="<b>%{x}</b><br>Impact Score: %{y}",
-        line=dict(color="#dc2626", width=3)
-    )
-
-    freq_fig.update_layout(
-        height=320,
-        margin=dict(l=0, r=0, t=10, b=0),
-        yaxis_title="Relative Feature Impact",
-        xaxis_title="Network Flow Features"
-    )
-
     st.plotly_chart(freq_fig, use_container_width=True)
 
 
+# ==============================
 # SINGLE FLOW CONFIDENCE
+# ==============================
 st.markdown("---")
-st.markdown("### 🔐 Model Confidence (Real Single Flow)")
+st.markdown("### 🔐 Model Confidence (Single Flow Test)")
 
 if st.button("Run Confidence Test on Uploaded Data"):
+
     try:
         if "uploaded_df" not in st.session_state:
             st.warning("Please upload a CSV file first.")
@@ -237,10 +229,9 @@ if st.button("Run Confidence Test on Uploaded Data"):
 
         df_uploaded = st.session_state["uploaded_df"]
 
-        # Load trained feature order
-        feature_columns = pd.read_pickle(FEATURE_PATH)
+        # Load feature order properly
+        feature_columns = joblib.load(FEATURE_PATH)
 
-        # SAME PREPROCESSING AS BACKEND
         df_numeric = df_uploaded.select_dtypes(include=["number"])
         df_numeric = df_numeric.replace([np.inf, -np.inf], 0)
         df_numeric = df_numeric.fillna(0)
@@ -251,7 +242,6 @@ if st.button("Run Confidence Test on Uploaded Data"):
 
         df_features = df_numeric[feature_columns]
 
-        # Pick one real flow
         single_flow = df_features.iloc[0]
         features = single_flow.values.tolist()
 
@@ -271,19 +261,19 @@ if st.button("Run Confidence Test on Uploaded Data"):
         else:
             st.success("✅ Prediction: BENIGN")
 
-        st.markdown("#### 📊 Confidence Scores")
-
-        st.write(f"Benign Confidence: **{benign_conf:.2f}%**")
+        st.write(f"Benign Confidence: {benign_conf:.2f}%")
         st.progress(benign_conf / 100)
 
-        st.write(f"Attack Confidence: **{attack_conf:.2f}%**")
+        st.write(f"Attack Confidence: {attack_conf:.2f}%")
         st.progress(attack_conf / 100)
 
     except Exception as e:
         st.error(f"Error while computing confidence: {e}")
 
 
+# ==============================
 # FOOTER
+# ==============================
 st.caption(
     "Dataset: CICIDS 2017 | Model: Random Forest | Live Backend Visualization"
 )
