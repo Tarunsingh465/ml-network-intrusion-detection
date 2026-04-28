@@ -2,39 +2,139 @@ import streamlit as st
 
 
 # ==============================
-# APPLY GLOBAL THEME
+# APPLY GLOBAL SOC THEME
 # ==============================
 def apply_theme():
 
     st.markdown("""
     <style>
 
-    /* Hide default Streamlit multipage navigation */
+    /* ==============================
+       SOC BACKGROUND
+    ============================== */
+    .stApp {
+        background: radial-gradient(circle at top, #020617, #020617 40%, #000000);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* ==============================
+       HIDE DEFAULT NAV
+    ============================== */
     [data-testid="stSidebarNav"] {
         display: none;
     }
 
-    /* Sidebar background */
+    /* ==============================
+       SIDEBAR
+    ============================== */
     [data-testid="stSidebar"] {
-        background-color: #0f172a;
+        background: linear-gradient(180deg, #020617, #020617);
+        border-right: 1px solid #1e293b;
     }
 
-    /* Main app background */
-    .stApp {
-        background-color: #0b1220;
-        color: white;
+    /* ==============================
+       NEON TEXT ACCENT
+    ============================== */
+    h1, h2 {
+        color: #38bdf8;
+        text-shadow: 0 0 8px rgba(56,189,248,0.4);
     }
 
-    /* Improve button styling */
+    /* ==============================
+       GLASS PANELS (SOC CARDS)
+    ============================== */
+    .soc-card {
+        background: rgba(2, 6, 23, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(56,189,248,0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        transition: 0.3s;
+    }
+
+    .soc-card:hover {
+        border: 1px solid rgba(56,189,248,0.6);
+        box-shadow: 0 0 20px rgba(56,189,248,0.3);
+    }
+
+    /* ==============================
+       BUTTONS (NEON STYLE)
+    ============================== */
     .stButton>button {
-        border-radius: 8px;
-        border: 1px solid #334155;
-        padding: 0.5rem 1rem;
+        background: linear-gradient(90deg, #2563eb, #38bdf8);
+        color: white;
+        border-radius: 10px;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
     }
 
-    /* Improve slider color */
+    .stButton>button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(56,189,248,0.6);
+    }
+
+    /* ==============================
+       INPUTS
+    ============================== */
+    div[data-baseweb="select"] > div,
+    .stNumberInput input {
+        background: #020617 !important;
+        border: 1px solid #1e293b !important;
+        color: #e2e8f0 !important;
+        border-radius: 8px;
+    }
+
+    /* ==============================
+       DROPDOWN
+    ============================== */
+    ul[role="listbox"] {
+        background-color: #020617 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #1e293b;
+    }
+
+    /* ==============================
+       LABELS
+    ============================== */
+    label {
+        color: #94a3b8 !important;
+    }
+
+    /* ==============================
+       SLIDER
+    ============================== */
     div[data-baseweb="slider"] > div {
         color: #ef4444;
+    }
+
+    /* ==============================
+       BLINKING ALERT (USE ANYWHERE)
+    ============================== */
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+
+    .alert-blink {
+        animation: blink 1s infinite;
+        color: #ef4444;
+        font-weight: bold;
+    }
+
+    /* ==============================
+       TERMINAL STYLE TEXT
+    ============================== */
+    .terminal {
+        font-family: monospace;
+        color: #22c55e;
+        background: #000;
+        padding: 10px;
+        border-radius: 6px;
     }
 
     </style>
@@ -42,15 +142,58 @@ def apply_theme():
 
 
 # ==============================
-# RENDER SIDEBAR
+# PAGE-SPECIFIC THEMES
+# ==============================
+def apply_page_theme(page):
+
+    colors = {
+        "dashboard": "#020617",
+        "predict": "#020617",
+        "visual": "#02111f",
+        "history": "#03121a",
+        "explain": "#060e1a"
+    }
+
+    color = colors.get(page, "#020617")
+
+    st.markdown(f"""
+    <style>
+    .stApp {{
+        background: radial-gradient(circle at top, {color}, #000);
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# ==============================
+# RENDER SIDEBAR (SOC STYLE)
 # ==============================
 def render_sidebar(current_page):
 
-    st.sidebar.markdown("## 🛡 Network Intrusion Detection System")
-    st.sidebar.caption("ML-Based IDS | CICIDS 2017")
+    page_map = {
+        "Dashboard": "dashboard",
+        "Visualizations": "visual",
+        "Predict Input": "predict",
+        "History": "history",
+        "Explainability": "explain"
+    }
+
+    apply_page_theme(page_map.get(current_page, "dashboard"))
+
+    # ==============================
+    # SIDEBAR HEADER
+    # ==============================
+    st.sidebar.markdown("""
+    <h2 style="color:#38bdf8;">🛡 IDS Console</h2>
+    """, unsafe_allow_html=True)
+
+    st.sidebar.caption("Intrusion Detection System")
     st.sidebar.markdown("---")
 
-    st.sidebar.markdown("### 📂 Navigation")
+    # ==============================
+    # NAVIGATION
+    # ==============================
+    st.sidebar.markdown("### 📂 Modules")
 
     pages = {
         "Dashboard": "dashboard.py",
@@ -68,24 +211,32 @@ def render_sidebar(current_page):
 
     st.sidebar.markdown("---")
 
-    st.sidebar.markdown("### ⚙ Page Settings")
+    # ==============================
+    # THRESHOLD CONTROL
+    # ==============================
+    st.sidebar.markdown("### ⚙ Detection Sensitivity")
 
     threshold = st.sidebar.slider(
         "Attack Threshold",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.30,
-        step=0.01
+        0.0, 1.0, 0.30, 0.01
     )
+
+    st.sidebar.caption("Lower → More sensitive detection")
 
     st.sidebar.markdown("---")
 
-    st.sidebar.markdown("### ℹ System Info")
-    st.sidebar.info("""
-    Model: Random Forest  
-    Features: 78  
-    Classification: Binary (Benign vs Attack)  
-    Deployment: Flask + Streamlit  
-    """)
+    # ==============================
+    # SYSTEM STATUS PANEL
+    # ==============================
+    st.sidebar.markdown("### 🛰 System Status")
+
+    st.sidebar.markdown("""
+    <div class="soc-card">
+    <b>Model:</b> Random Forest <br>
+    <b>Features:</b> 78 <br>
+    <b>Mode:</b> Binary Detection <br>
+    <b>Status:</b> <span style="color:#22c55e;">ACTIVE</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     return threshold

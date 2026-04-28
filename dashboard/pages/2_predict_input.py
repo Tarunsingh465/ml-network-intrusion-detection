@@ -209,52 +209,91 @@ if st.button("Predict Network Flow", use_container_width=True):
         )
 
         # ==============================
-        # ATTACK SEVERITY METER
+        # ATTACK SEVERITY METER (LEFT + DESCRIPTION RIGHT)
         # ==============================
         st.markdown("## 🚨 Attack Severity Meter")
 
-        gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=attack_prob * 100,
-            title={"text": "Attack Probability (%)"},
-            gauge={
-                "axis": {"range": [0, 100]},
-                "bar": {"color": "red"},
-                "steps": [
-                    {"range": [0, 25], "color": "green"},
-                    {"range": [25, 50], "color": "orange"},
-                    {"range": [50, 100], "color": "red"},
-                ],
-            }
-        ))
+        col1, col2 = st.columns([2, 1])
 
-        st.plotly_chart(gauge, use_container_width=True)
+        with col1:
+            gauge = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=attack_prob * 100,
+                title={"text": "Attack Probability (%)"},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "bar": {"color": "red"},
+                    "steps": [
+                        {"range": [0, 25], "color": "green"},
+                        {"range": [25, 50], "color": "orange"},
+                        {"range": [50, 100], "color": "red"},
+                    ],
+                }
+            ))
+
+            st.plotly_chart(gauge, use_container_width=True)
+
+        with col2:
+            st.markdown("### 📘 What This Shows")
+            st.write(
+                """
+                This meter represents the **probability that the given network flow is malicious**.
+
+                - 🟢 **0–25%** → Likely Safe (Benign Traffic)
+                - 🟠 **25–50%** → Suspicious Activity
+                - 🔴 **50–100%** → High Confidence Attack
+
+                It helps in quickly assessing **threat severity** in real-time.
+                """
+            )
+
 
         # ==============================
-        # PROBABILITY DISTRIBUTION
+        # PROBABILITY DISTRIBUTION (LEFT + DESCRIPTION RIGHT)
         # ==============================
         st.markdown("## 📊 Probability Distribution")
 
-        df = pd.DataFrame({
-            "Type": ["Benign", "Attack"],
-            "Probability": [benign_prob, attack_prob]
-        })
+        col3, col4 = st.columns([2, 1])
 
-        pie = px.pie(
-            df,
-            names="Type",
-            values="Probability",
-            color="Type",
-            color_discrete_map={
-                "Benign": "#22c55e",
-                "Attack": "#ef4444"
-            },
-            hole=0.4
-        )
+        with col3:
+            df = pd.DataFrame({
+                "Type": ["Benign", "Attack"],
+                "Probability": [benign_prob, attack_prob]
+            })
 
-        pie.update_layout(showlegend=False)
+            pie = px.pie(
+                df,
+                names="Type",
+                values="Probability",
+                color="Type",
+                color_discrete_map={
+                    "Benign": "#22c55e",
+                    "Attack": "#ef4444"
+                },
+                hole=0.4
+            )
 
-        st.plotly_chart(pie, use_container_width=True)
+            pie.update_layout(showlegend=False)
+
+            st.plotly_chart(pie, use_container_width=True)
+
+        with col4:
+            st.markdown("### 📘 What This Shows")
+            st.write(
+                """
+                This chart shows how the model distributes confidence between:
+
+                - 🟢 **Benign Traffic**
+                - 🔴 **Attack Traffic**
+
+                Instead of just a label, this helps you understand:
+                - Model certainty
+                - Confidence balance
+                - Risk interpretation
+
+                Useful for **decision-making and monitoring systems**.
+                """
+            )
 
     except Exception as e:
         st.error(f"Prediction failed: {e}")
